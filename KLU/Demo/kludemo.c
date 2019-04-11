@@ -7,6 +7,8 @@
 #include <math.h>
 #include <stdio.h>
 #include "klu.h"
+#include <sys/time.h>
+#define MICRO_IN_SEC 1000000.00
 
 /* for handling complex matrices */
 #define REAL(X,i) (X [2*(i)])
@@ -18,6 +20,17 @@
 /* ========================================================================== */
 /* === klu_backslash ======================================================== */
 /* ========================================================================== */
+
+double microtime(){
+        int tv_sec,tv_usec;
+        double time;
+        struct timeval tv;
+        struct timezone tz;
+        gettimeofday(&tv,&tz);
+
+        return tv.tv_sec+tv.tv_usec/MICRO_IN_SEC;
+}
+
 
 static int klu_backslash    /* return 1 if successful, 0 otherwise */
 (
@@ -46,6 +59,8 @@ static int klu_backslash    /* return 1 if successful, 0 otherwise */
     klu_symbolic *Symbolic ;
     klu_numeric *Numeric ;
     int i, j, p ;
+    FILE *result = fopen("klu_solution.txt", "w");
+    FILE *B_file = fopen("klu_B.txt", "w");
 
     if (!Ap || !Ai || !Ax || !B || !X || !B) return (0) ;
 
@@ -90,6 +105,11 @@ static int klu_backslash    /* return 1 if successful, 0 otherwise */
             X [i] = B [i] ;
         }
         klu_solve (Symbolic, Numeric, n, 1, X, Common) ;
+	
+	for ( i = 0; i < n; i++ )
+	{
+	  fprintf(result, "x[%d]=%lf\n", i, X[i]);
+	}
 
         /* ------------------------------------------------------------------ */
         /* compute residual, rnorm = norm(b-Ax,1) / norm(A,1) */
@@ -227,6 +247,7 @@ static void klu_demo (int n, int *Ap, int *Ai, double *Ax, int isreal)
     /* create a right-hand-side */
     /* ---------------------------------------------------------------------- */
 
+    printf(" isreal in klu_demo is %d\n", isreal);
     if (isreal)
     {
         /* B = 1 + (1:n)/n */
@@ -237,7 +258,8 @@ static void klu_demo (int n, int *Ap, int *Ai, double *Ax, int isreal)
         {
             for (i = 0 ; i < n ; i++)
             {
-                B [i] = 1 + ((double) i+1) / ((double) n) ;
+                //B [i] = 1 + ((double) i+1) / ((double) n) ;
+		B[i] = 1.0;
             }
         }
     }
@@ -307,6 +329,7 @@ int main (void)
     cholmod_sparse *A ;
     cholmod_common ch ;
     cholmod_start (&ch) ;
+    double start_time, finish_time;
     A = cholmod_read_sparse (stdin, &ch) ;
     if (A)
     {
@@ -317,7 +340,10 @@ int main (void)
         }
         else
         {
-            klu_demo (A->nrow, A->p, A->i, A->x, A->xtype == CHOLMOD_REAL) ;
+	    start_time = microtime(); 
+            klu_demo (A->nrow, A->p, A->i, A->x, CHOLMOD_REAL) ;
+	    finish_time = microtime() - start_time;
+	    printf("The time of KLU is: %lf\n", finish_time);
         }
         cholmod_free_sparse (&A, &ch) ;
     }
