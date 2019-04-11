@@ -21,7 +21,7 @@ csn *cs_lu (const cs *A, const css *S, double tol)
     for (i = 0 ; i < n ; i++) x [i] = 0 ;           /* clear workspace */
     for (i = 0 ; i < n ; i++) pinv [i] = -1 ;       /* no rows pivotal yet */
     for (k = 0 ; k <= n ; k++) Lp [k] = 0 ;         /* no cols of L yet */
-    lnz = unz = 0 ;
+    lnz = unz = 0 ; //Direct Methods for Sparse Linear SystemsDirect Methods for Sparse Linear Systems
     for (k = 0 ; k < n ; k++)       /* compute L(:,k) and U(:,k) */
     {
         /* --- Triangular solve --------------------------------------------- */
